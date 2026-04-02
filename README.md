@@ -275,6 +275,142 @@ Escola / Unidade
 
 ---
 
+## 🔌 Endpoints para Backend
+
+Quando integrar com backend real, implementar os seguintes endpoints (URL base: `http://localhost:3000/api`):
+
+### 🔐 Autenticação
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/auth/login` | Autentica usuário (username, password) → retorna JWT |
+| POST | `/auth/logout` | Encerra sessão |
+| GET | `/auth/verify` | Verifica validade do token |
+
+**Resposta esperada do login:**
+```json
+{
+  "id": 1,
+  "username": "admin",
+  "role": "ADMINISTRADOR",
+  "token": "eyJhbGc..."
+}
+```
+
+### 👥 Escolas (com validação RN001, RN003)
+
+| Método | Endpoint | Descrição | Regra |
+|--------|----------|-----------|-------|
+| GET | `/escolas` | Listar todas | - |
+| POST | `/escolas` | Criar nova | RN003: Coordenador único |
+| PUT | `/escolas/:id` | Atualizar | RN003: Coordenador único |
+| PATCH | `/escolas/:id/inativar` | **Soft delete** | RN001: Não excluir |
+| PATCH | `/escolas/:id/ativar` | Reativar | - |
+
+### 🏥 Unidades (com validação RN002, RN004)
+
+| Método | Endpoint | Descrição | Regra |
+|--------|----------|-----------|-------|
+| GET | `/unidades` | Listar todas | - |
+| POST | `/unidades` | Criar nova | RN004: Responsável único |
+| PUT | `/unidades/:id` | Atualizar | RN004: Responsável único |
+| PATCH | `/unidades/:id/inativar` | **Soft delete** | RN002: Não excluir |
+| PATCH | `/unidades/:id/ativar` | Reativar | - |
+
+### 👨‍⚕️ Profissionais de Saúde (com validação RN005, RN013)
+
+| Método | Endpoint | Descrição | Regra |
+|--------|----------|-----------|-------|
+| GET | `/profissionais` | Listar todos | - |
+| GET | `/profissionais/:id` | Detalhes do profissional | - |
+| POST | `/profissionais` | Criar novo | - |
+| PUT | `/profissionais/:id` | Atualizar dados | - |
+| PATCH | `/profissionais/:id/completar-cadastro` | Marcar cadastro como completo | RN013 |
+| PATCH | `/profissionais/:id/inativar` | **Soft delete** | RN005: Não excluir |
+| PATCH | `/profissionais/:id/ativar` | Reativar | - |
+
+### 🤝 Pacientes (com validação RN006, RN007, RN008)
+
+| Método | Endpoint | Descrição | Regra |
+|--------|----------|-----------|-------|
+| GET | `/pacientes` | Listar todos | - |
+| GET | `/pacientes/:id` | Detalhes do paciente | - |
+| POST | `/pacientes` | Criar novo | RN007: Criar prontuário auto |
+| PUT | `/pacientes/:id` | Atualizar | - |
+| PATCH | `/pacientes/:id/inativar` | **Soft delete** | RN006: Não excluir |
+| PATCH | `/pacientes/:id/ativar` | Reativar | - |
+
+### 💊 Medicações (com validação RN009, RN010)
+
+| Método | Endpoint | Descrição | Regra |
+|--------|----------|-----------|-------|
+| GET | `/medicacoes` | Listar todas | - |
+| POST | `/medicacoes` | Criar nova | - |
+| PUT | `/medicacoes/:id` | Atualizar | - |
+| PATCH | `/medicacoes/:id/inativar` | **Soft delete** | RN009: Não excluir |
+| PATCH | `/medicacoes/:id/ativar` | Reativar | - |
+
+### 🏥 Atendimentos (com validação RN010, RN011, RN012)
+
+| Método | Endpoint | Descrição | Regra |
+|--------|----------|-----------|-------|
+| GET | `/atendimentos` | Listar todos | - |
+| GET | `/atendimentos/:id` | Detalhes do atendimento | - |
+| POST | `/atendimentos` | Criar novo | RN010, RN011, RN012 |
+| PUT | `/atendimentos/:id` | Atualizar | RN010, RN011, RN012 |
+
+**Validações obrigatórias (RN010-RN012):**
+- Medicação deve estar **ATIVA**, **válida** (data futuro) e **com estoque**
+- Estoque é decrementado **automaticamente** ao registrar atendimento
+- `dataFim > dataInicio` (nunca pode ser menor ou igual)
+
+### 📋 Prontuários (com validação RN007, RN008)
+
+| Método | Endpoint | Descrição | Regra |
+|--------|----------|-----------|-------|
+| GET | `/prontuarios` | Listar todos | - |
+| GET | `/prontuarios/paciente/:pacienteId` | Prontuário específico | RN008 |
+
+**Observação:** Prontuário é criado automaticamente ao cadastrar paciente (RN007). Não precisa endpoint de criação.
+
+### 📬 Requisições de Medicação
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/requisicoes` | Listar todas |
+| POST | `/requisicoes` | Criar nova requisição |
+
+### 📊 Estatísticas / Dashboard
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/stats` | Retorna contadores para dashboard |
+
+**Resposta esperada:**
+```json
+{
+  "escolas": 2,
+  "unidades": 2,
+  "profissionais": 3,
+  "pacientes": 3,
+  "atendimentos": 2,
+  "medicacoesAtivas": 3,
+  "medicacoesEstoqueBaixo": 1,
+  "requisicoesPendentes": 2
+}
+```
+
+### 📝 Headers Necessários
+
+Todas as requisições (exceto `/auth/login`) devem incluir:
+
+```
+Authorization: Bearer {JWT_TOKEN}
+Content-Type: application/json
+```
+
+---
+
 ## 📚 Stack Tecnológico
 
 ```
