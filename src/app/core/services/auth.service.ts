@@ -75,11 +75,6 @@ export class AuthService {
     return this.currentUser?.role === "PROFISSIONAL_SAUDE";
   }
 
-  /**
-   * Autentica o usuário contra o backend real (com fallback para mock).
-   * Tenta POST /auth/login primeiro, se falhar usa DataService.loginMock()
-   * Decodifica o JWT para extrair username e role.
-   */
   login(
     username: string,
     password: string
@@ -92,7 +87,6 @@ export class AuthService {
       .pipe(
         tap((res) => this.handleLoginSuccess(res, username)),
         catchError(() => {
-          // Fallback para mock (útil em desenvolvimento/testes sem backend)
           return this.data.loginMock(username, password).pipe(
             tap((res) => this.handleLoginSuccess(res, username)),
             catchError((err) => throwError(() => err))
@@ -101,7 +95,6 @@ export class AuthService {
       );
   }
 
-  /** Processa login bem-sucedido (backend real ou mock) */
   private handleLoginSuccess(
     res: LoginResponseModel,
     username: string
@@ -128,7 +121,6 @@ export class AuthService {
     localStorage.removeItem("clinica_user");
   }
 
-  /** Restaura sessão do localStorage ao inicializar o app */
   restoreSession(): void {
     const token = localStorage.getItem("clinica_token");
     const stored = localStorage.getItem("clinica_user");

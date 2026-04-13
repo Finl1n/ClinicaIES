@@ -26,7 +26,6 @@ export class AtendimentosComponent implements OnInit {
   saving = false;
   errorMsg = '';
   successMsg = '';
-  // RN013: bloquear se cadastro incompleto — aqui simulado via flag
   cadastroCompleto = true;
 
   tipos: TipoAtendimento[] = ['URGENCIA', 'EMERGENCIA', 'CONSULTA', 'REVISAO'];

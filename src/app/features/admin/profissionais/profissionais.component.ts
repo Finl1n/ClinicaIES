@@ -42,11 +42,6 @@ export class ProfissionaisComponent implements OnInit {
     });
   }
 
-  /**
-   * Formulário corrigido conforme backend:
-   * POST /profissionais recebe { nome, username, password }
-   * Especialidade/conselho são preenchidos pelo próprio profissional depois.
-   */
   buildForm() {
     this.form = this.fb.group({
       nome:     ['', [Validators.required, Validators.minLength(3)]],

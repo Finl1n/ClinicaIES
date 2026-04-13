@@ -34,17 +34,12 @@ export class MeuCadastroComponent implements OnInit {
 
   ngOnInit() {
     this.loading = true;
-    // Tenta carregar do backend; se falhar, usa o mock/local do app para não deixar a tela vazia.
     this.api.getMeuPerfil().subscribe({
       next: (p) => { this.profissional = p; this.buildForm(); this.loading = false; },
       error: () => this.loadFallbackProfile()
     });
   }
 
-  /**
-   * Formulário corrigido conforme backend:
-   * PATCH /profissionais/meu-perfil/complemento recebe { especialidade, conselho, numeroRegistro }
-   */
   buildForm() {
     this.form = this.fb.group({
       formacao:       [this.profissional?.formacao || '', Validators.required],

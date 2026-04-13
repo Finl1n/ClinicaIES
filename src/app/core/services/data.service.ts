@@ -764,8 +764,6 @@ export class DataService {
     };
   }
 
-  // ── AUTENTICAÇÃO MOCK ──
-  /** Mock de autenticação para testes sem backend real */
   loginMock(username: string, password: string): Observable<LoginResponse> {
     const usuario = USUARIOS_MOCK.find(
       (u) => u.username === username && u.password === password
@@ -780,7 +778,6 @@ export class DataService {
     return of({ token, usuario }).pipe(delay(500));
   }
 
-  /** Cria um JWT mock para simular backend */
   private createMockJwt(usuario: Usuario): string {
     const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
     const now = Math.floor(Date.now() / 1000);
@@ -796,19 +793,16 @@ export class DataService {
     return `${header}.${payload}.mock-signature`;
   }
 
-  /** Obtém usuário atualmente logado */
   getCurrentUser(): Observable<Usuario | null> {
     return this.currentUser$.asObservable();
   }
 
-  /** Obtém profissional logado (se role for PROFISSIONAL_SAUDE) */
   getProfissionalLogado(): ProfissionalSaude | undefined {
     const usuario = this.currentUser$.value;
     if (!usuario || usuario.role !== "PROFISSIONAL_SAUDE") return undefined;
     return this.profissionais$.value.find((p) => p.username === usuario.username);
   }
 
-  /** Desconecta usuário */
   logout(): void {
     this.currentUser$.next(null);
   }
