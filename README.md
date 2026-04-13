@@ -40,15 +40,20 @@ npm start
 ## 🔑 Acesso ao Sistema (Credenciais de Teste)
 
 ```
-┌──────────────────┬────────────┬───────────┐
-│ Perfil           │ Usuário    │ Senha     │
-├──────────────────┼────────────┼───────────┤
-│ Administrador    │ admin      │ admin123  │
-│ Profissional     │ profissional│ prof123  │
-└──────────────────┴────────────┴───────────┘
+┌──────────────────────┬────────────────┬───────────────┐
+│ Perfil               │ Usuário        │ Senha         │
+├──────────────────────┼────────────────┼───────────────┤
+│ Administrador        │ admin          │ admin123      │
+│ Profissional Saúde   │ profissional   │ prof123       │
+│ Médico (Ricardo)     │ ricardo        │ ricardo123    │
+│ Dentista (Patrícia)  │ patricia       │ patricia123   │
+│ Enfermeiro (Bruno)   │ bruno          │ bruno123      │
+└──────────────────────┴────────────────┴───────────────┘
 ```
 
-**Dica**: Na tela de login há botões para preencher automaticamente as credenciais.
+**✅ Funciona 100% em MODO MOCK (sem dependência de backend)**
+
+Dica: Na tela de login há botões para preencher automaticamente as credenciais.
 
 ---
 
@@ -246,9 +251,38 @@ Escola / Unidade
 
 ### ⚠️ Escopo do Projeto
 
-- **Esta é uma SIMULAÇÃO Frontend**: Todos os dados estão em memória (BehaviorSubject)
-- **Sem conexão com Backend**: Use este projeto como prototipo
-- **Guards locais apenas**: A segurança real deve ser implementada no Backend
+- **Frontend Híbrido**: Suporta **modo Mock (desenvolvimento)** E **modo Backend Real (produção)**
+- **Modo Mock (Atual)**: Todos os dados em memória (BehaviorSubject) com autenticação mock via `DataService.loginMock()`
+- **Modo Backend Real**: Quando backend estiver em `http://localhost:8080`, o AuthService faz fallback automático para chamadas HTTP
+- **Guards e Validações**: Implementados no frontend COM regras de negócio no backend obrigatório para produção
+
+### 🔄 Como Funciona a Autenticação
+
+```
+1. Usuário digita credenciais (username, password)
+2. AuthService tenta POST /auth/login em http://localhost:8080
+3. Se falhar (sem backend) → Fallback para DataService.loginMock()
+4. Se suceder → Decodifica JWT e salva em localStorage
+5. Usuário redirecionado conforme role (ADMINISTRADOR ou PROFISSIONAL_SAUDE)
+```
+
+### 🧪 Credenciais de Teste (Modo Mock)
+
+Todas as credenciais abaixo funcionam com o mock integrado:
+
+```
+┌──────────────────┬────────────────┬───────────────┐
+│ Perfil           │ Usuário        │ Senha         │
+├──────────────────┼────────────────┼───────────────┤
+│ Administrador    │ admin          │ admin123      │
+│ Profissional     │ profissional   │ prof123       │
+│ Médico (Ricardo) │ ricardo        │ ricardo123    │
+│ Dentista (Patrícia) │ patricia    │ patricia123   │
+│ Enfermeiro (Bruno)  │ bruno       │ bruno123      │
+└──────────────────┴────────────────┴───────────────┘
+```
+
+**Dica:** Botões de "Acesso rápido" na tela de login preenchem credenciais automaticamente.
 
 ### 🔧 Para Desenvolvimento
 
@@ -256,14 +290,17 @@ Escola / Unidade
 - **Lazy loading** automático nas rotas
 - Serviços injetados com `providedIn: 'root'`
 - **@angular/router** com preloading
+- **DataService**: Mock completo com todas as RNs (RN001-RN013)
+- **AuthService**: Fallback automático HTTP → Mock
 
-### 🚀 Próximos Passos (Integração Real)
+### 🚀 Próximos Passos (Integração com Backend Real)
 
-1. Substituir `DataService` por chamadas HTTP
-2. Implementar JWT/OAuth no Backend
-3. Validações no Backend (regras de negócio)
-4. Persistência em banco de dados (PostgreSQL/MongoDB)
-5. Tratamento de erros com retry logic
+1. ✅ DataService pronto para chamadas HTTP (basta descomentar)
+2. ✅ AuthService com fallback automático (já funciona)
+3. ✅ Validações RN013 implementadas
+4. ⏳ Implementar backend com endpoints listados abaixo
+5. ⏳ Persistência em banco de dados (PostgreSQL/MongoDB)
+6. ⏳ Tratamento de erros com retry logic
 
 ---
 
@@ -271,7 +308,7 @@ Escola / Unidade
 
 **Em 30 segundos:**
 
-> "O projeto é um sistema web para gerenciar atendimentos clínicos em instituições de ensino. Tem dois perfis: Administrador (gerencia escolas, unidades, profissionais e medicações) e Profissional de Saúde (gerencia pacientes, atendimentos e prontuários). Foi desenvolvido com Angular 17 em componentes standalone, com mock de dados em memória para demonstrar as regras de negócio."
+> "O projeto é um sistema web para gerenciar atendimentos clínicos em instituições de ensino. Tem dois perfis: Administrador (gerencia escolas, unidades, profissionais e medicações) e Profissional de Saúde (gerencia pacientes, atendimentos e prontuários). Desenvolvido com Angular 17 em componentes standalone, suporta modo mock completo para testes (sem backend) E modo produção com backend real. Todas as 13 regras de negócio estão implementadas, incluindo validação de cadastro completo antes de atender (RN013)."
 
 ---
 
@@ -281,13 +318,14 @@ Quando integrar com backend real, implementar os seguintes endpoints (URL base: 
 
 ### 🔐 Autenticação
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| POST | `/auth/login` | Autentica usuário (username, password) → retorna JWT |
-| POST | `/auth/logout` | Encerra sessão |
-| GET | `/auth/verify` | Verifica validade do token |
+| Método | Endpoint       | Descrição                                            |
+| ------ | -------------- | ---------------------------------------------------- |
+| POST   | `/auth/login`  | Autentica usuário (username, password) → retorna JWT |
+| POST   | `/auth/logout` | Encerra sessão                                       |
+| GET    | `/auth/verify` | Verifica validade do token                           |
 
 **Resposta esperada do login:**
+
 ```json
 {
   "id": 1,
@@ -299,94 +337,96 @@ Quando integrar com backend real, implementar os seguintes endpoints (URL base: 
 
 ### 👥 Escolas (com validação RN001, RN003)
 
-| Método | Endpoint | Descrição | Regra |
-|--------|----------|-----------|-------|
-| GET | `/escolas` | Listar todas | - |
-| POST | `/escolas` | Criar nova | RN003: Coordenador único |
-| PUT | `/escolas/:id` | Atualizar | RN003: Coordenador único |
-| PATCH | `/escolas/:id/inativar` | **Soft delete** | RN001: Não excluir |
-| PATCH | `/escolas/:id/ativar` | Reativar | - |
+| Método | Endpoint                | Descrição       | Regra                    |
+| ------ | ----------------------- | --------------- | ------------------------ |
+| GET    | `/escolas`              | Listar todas    | -                        |
+| POST   | `/escolas`              | Criar nova      | RN003: Coordenador único |
+| PUT    | `/escolas/:id`          | Atualizar       | RN003: Coordenador único |
+| PATCH  | `/escolas/:id/inativar` | **Soft delete** | RN001: Não excluir       |
+| PATCH  | `/escolas/:id/ativar`   | Reativar        | -                        |
 
 ### 🏥 Unidades (com validação RN002, RN004)
 
-| Método | Endpoint | Descrição | Regra |
-|--------|----------|-----------|-------|
-| GET | `/unidades` | Listar todas | - |
-| POST | `/unidades` | Criar nova | RN004: Responsável único |
-| PUT | `/unidades/:id` | Atualizar | RN004: Responsável único |
-| PATCH | `/unidades/:id/inativar` | **Soft delete** | RN002: Não excluir |
-| PATCH | `/unidades/:id/ativar` | Reativar | - |
+| Método | Endpoint                 | Descrição       | Regra                    |
+| ------ | ------------------------ | --------------- | ------------------------ |
+| GET    | `/unidades`              | Listar todas    | -                        |
+| POST   | `/unidades`              | Criar nova      | RN004: Responsável único |
+| PUT    | `/unidades/:id`          | Atualizar       | RN004: Responsável único |
+| PATCH  | `/unidades/:id/inativar` | **Soft delete** | RN002: Não excluir       |
+| PATCH  | `/unidades/:id/ativar`   | Reativar        | -                        |
 
 ### 👨‍⚕️ Profissionais de Saúde (com validação RN005, RN013)
 
-| Método | Endpoint | Descrição | Regra |
-|--------|----------|-----------|-------|
-| GET | `/profissionais` | Listar todos | - |
-| GET | `/profissionais/:id` | Detalhes do profissional | - |
-| POST | `/profissionais` | Criar novo | - |
-| PUT | `/profissionais/:id` | Atualizar dados | - |
-| PATCH | `/profissionais/:id/completar-cadastro` | Marcar cadastro como completo | RN013 |
-| PATCH | `/profissionais/:id/inativar` | **Soft delete** | RN005: Não excluir |
-| PATCH | `/profissionais/:id/ativar` | Reativar | - |
+| Método | Endpoint                                | Descrição                     | Regra              |
+| ------ | --------------------------------------- | ----------------------------- | ------------------ |
+| GET    | `/profissionais`                        | Listar todos                  | -                  |
+| GET    | `/profissionais/:id`                    | Detalhes do profissional      | -                  |
+| POST   | `/profissionais`                        | Criar novo                    | -                  |
+| PUT    | `/profissionais/:id`                    | Atualizar dados               | -                  |
+| PATCH  | `/profissionais/:id/completar-cadastro` | Marcar cadastro como completo | RN013              |
+| PATCH  | `/profissionais/:id/inativar`           | **Soft delete**               | RN005: Não excluir |
+| PATCH  | `/profissionais/:id/ativar`             | Reativar                      | -                  |
 
 ### 🤝 Pacientes (com validação RN006, RN007, RN008)
 
-| Método | Endpoint | Descrição | Regra |
-|--------|----------|-----------|-------|
-| GET | `/pacientes` | Listar todos | - |
-| GET | `/pacientes/:id` | Detalhes do paciente | - |
-| POST | `/pacientes` | Criar novo | RN007: Criar prontuário auto |
-| PUT | `/pacientes/:id` | Atualizar | - |
-| PATCH | `/pacientes/:id/inativar` | **Soft delete** | RN006: Não excluir |
-| PATCH | `/pacientes/:id/ativar` | Reativar | - |
+| Método | Endpoint                  | Descrição            | Regra                        |
+| ------ | ------------------------- | -------------------- | ---------------------------- |
+| GET    | `/pacientes`              | Listar todos         | -                            |
+| GET    | `/pacientes/:id`          | Detalhes do paciente | -                            |
+| POST   | `/pacientes`              | Criar novo           | RN007: Criar prontuário auto |
+| PUT    | `/pacientes/:id`          | Atualizar            | -                            |
+| PATCH  | `/pacientes/:id/inativar` | **Soft delete**      | RN006: Não excluir           |
+| PATCH  | `/pacientes/:id/ativar`   | Reativar             | -                            |
 
 ### 💊 Medicações (com validação RN009, RN010)
 
-| Método | Endpoint | Descrição | Regra |
-|--------|----------|-----------|-------|
-| GET | `/medicacoes` | Listar todas | - |
-| POST | `/medicacoes` | Criar nova | - |
-| PUT | `/medicacoes/:id` | Atualizar | - |
-| PATCH | `/medicacoes/:id/inativar` | **Soft delete** | RN009: Não excluir |
-| PATCH | `/medicacoes/:id/ativar` | Reativar | - |
+| Método | Endpoint                   | Descrição       | Regra              |
+| ------ | -------------------------- | --------------- | ------------------ |
+| GET    | `/medicacoes`              | Listar todas    | -                  |
+| POST   | `/medicacoes`              | Criar nova      | -                  |
+| PUT    | `/medicacoes/:id`          | Atualizar       | -                  |
+| PATCH  | `/medicacoes/:id/inativar` | **Soft delete** | RN009: Não excluir |
+| PATCH  | `/medicacoes/:id/ativar`   | Reativar        | -                  |
 
 ### 🏥 Atendimentos (com validação RN010, RN011, RN012)
 
-| Método | Endpoint | Descrição | Regra |
-|--------|----------|-----------|-------|
-| GET | `/atendimentos` | Listar todos | - |
-| GET | `/atendimentos/:id` | Detalhes do atendimento | - |
-| POST | `/atendimentos` | Criar novo | RN010, RN011, RN012 |
-| PUT | `/atendimentos/:id` | Atualizar | RN010, RN011, RN012 |
+| Método | Endpoint            | Descrição               | Regra               |
+| ------ | ------------------- | ----------------------- | ------------------- |
+| GET    | `/atendimentos`     | Listar todos            | -                   |
+| GET    | `/atendimentos/:id` | Detalhes do atendimento | -                   |
+| POST   | `/atendimentos`     | Criar novo              | RN010, RN011, RN012 |
+| PUT    | `/atendimentos/:id` | Atualizar               | RN010, RN011, RN012 |
 
 **Validações obrigatórias (RN010-RN012):**
+
 - Medicação deve estar **ATIVA**, **válida** (data futuro) e **com estoque**
 - Estoque é decrementado **automaticamente** ao registrar atendimento
 - `dataFim > dataInicio` (nunca pode ser menor ou igual)
 
 ### 📋 Prontuários (com validação RN007, RN008)
 
-| Método | Endpoint | Descrição | Regra |
-|--------|----------|-----------|-------|
-| GET | `/prontuarios` | Listar todos | - |
-| GET | `/prontuarios/paciente/:pacienteId` | Prontuário específico | RN008 |
+| Método | Endpoint                            | Descrição             | Regra |
+| ------ | ----------------------------------- | --------------------- | ----- |
+| GET    | `/prontuarios`                      | Listar todos          | -     |
+| GET    | `/prontuarios/paciente/:pacienteId` | Prontuário específico | RN008 |
 
 **Observação:** Prontuário é criado automaticamente ao cadastrar paciente (RN007). Não precisa endpoint de criação.
 
 ### 📬 Requisições de Medicação
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| GET | `/requisicoes` | Listar todas |
-| POST | `/requisicoes` | Criar nova requisição |
+| Método | Endpoint       | Descrição             |
+| ------ | -------------- | --------------------- |
+| GET    | `/requisicoes` | Listar todas          |
+| POST   | `/requisicoes` | Criar nova requisição |
 
 ### 📊 Estatísticas / Dashboard
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| GET | `/stats` | Retorna contadores para dashboard |
+| Método | Endpoint | Descrição                         |
+| ------ | -------- | --------------------------------- |
+| GET    | `/stats` | Retorna contadores para dashboard |
 
 **Resposta esperada:**
+
 ```json
 {
   "escolas": 2,

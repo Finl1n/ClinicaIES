@@ -1,102 +1,144 @@
 import { Injectable } from "@angular/core";
-import { BehaviorSubject, Observable, of, throwError } from "rxjs";
-import { delay, tap } from "rxjs/operators";
-import { Role, Usuario } from "../models/models";
+import { HttpClient } from "@angular/common/http";
+import {
+  BehaviorSubject,
+  Observable,
+  tap,
+  throwError,
+  catchError,
+  of,
+} from "rxjs";
+import {
+  Role,
+  Usuario,
+  LoginResponse as LoginResponseModel,
+} from "../models/models";
+import { environment } from "../../../environments/environment";
+import { DataService } from "./data.service";
 
-/** Interface que define o estado da autenticação */
 export interface AuthState {
   user: Usuario | null;
   token: string | null;
   isAuthenticated: boolean;
 }
 
-/** Usuários de teste do sistema */
-const MOCK_USERS: Usuario[] = [
-  { id: 1, username: "admin", password: "admin123", role: "ADMINISTRADOR" },
-  {
-    id: 2,
-    username: "profissional",
-    password: "prof123",
-    role: "PROFISSIONAL_SAUDE",
-  },
-];
+interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+/** Decodifica o payload de um JWT sem biblioteca externa */
+function decodeJwt(token: string): Record<string, any> | null {
+  try {
+    const payload = token.split(".")[1];
+    return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+  } catch {
+    return null;
+  }
+}
 
 /**
- * Serviço responsável pela autenticação do usuário
- * Gerencia login, logout, sessão persistente e estado de autenticação
- *
- * ⚠️ IMPORTANTE: Este é um mock para demonstração
- * Em produção, conectar com backend e implementar JWT/OAuth
+ * Serviço de autenticação — integrado com o backend real.
+ * POST /auth/login → { token }
+ * O role é extraído do claim 'role' dentro do payload JWT.
  */
 @Injectable({ providedIn: "root" })
 export class AuthService {
-  /** Estado compartilhado da autenticação (RxJS BehaviorSubject) */
+  private readonly loginUrl = `${environment.apiUrl}/auth/login`;
+
   private state = new BehaviorSubject<AuthState>({
     user: null,
     token: null,
     isAuthenticated: false,
   });
 
-  /** Observable do estado - componentes se inscrevem aqui para monitorar mudanças */
   state$ = this.state.asObservable();
 
-  /** Retorna o usuário atual (getter para acesso rápido) */
+  constructor(
+    private http: HttpClient,
+    private data: DataService,
+  ) {}
+
   get currentUser(): Usuario | null {
     return this.state.value.user;
   }
-
-  /** Verifica se usuário atual é administrador */
+  get token(): string | null {
+    return this.state.value.token;
+  }
+  get isAuthenticated(): boolean {
+    return this.state.value.isAuthenticated;
+  }
   get isAdmin(): boolean {
     return this.currentUser?.role === "ADMINISTRADOR";
   }
-
-  /** Verifica se usuário atual é profissional de saúde */
   get isProfissional(): boolean {
     return this.currentUser?.role === "PROFISSIONAL_SAUDE";
   }
 
-  /** Verifica se há usuário autenticado */
-  get isAuthenticated(): boolean {
-    return this.state.value.isAuthenticated;
-  }
-
   /**
-   * Autentica usuário com username e password
-   * @param username nome de usuário
-   * @param password senha
-   * @returns Observable com dados do usuário autenticado
+   * Autentica o usuário contra o backend real (com fallback para mock).
+   * Tenta POST /auth/login primeiro, se falhar usa DataService.loginMock()
+   * Decodifica o JWT para extrair username e role.
    */
-  login(username: string, password: string): Observable<Usuario> {
-    const user = MOCK_USERS.find(
-      (u) => u.username === username && u.password === password,
-    );
-    if (!user) return throwError(() => new Error("Usuário ou senha inválidos"));
-    return of(user).pipe(
-      delay(600), // simula latência de rede
-      tap((u) => {
-        // Salva estado e persiste em localStorage
-        this.state.next({
-          user: u,
-          token: "mock-jwt-token",
-          isAuthenticated: true,
-        });
-        localStorage.setItem("clinica_user", JSON.stringify(u));
-      }),
-    );
+  login(
+    username: string,
+    password: string
+  ): Observable<LoginResponseModel> {
+    return this.http
+      .post<LoginResponseModel>(this.loginUrl, {
+        username,
+        password,
+      } as LoginRequest)
+      .pipe(
+        tap((res) => this.handleLoginSuccess(res, username)),
+        catchError(() => {
+          // Fallback para mock (útil em desenvolvimento/testes sem backend)
+          return this.data.loginMock(username, password).pipe(
+            tap((res) => this.handleLoginSuccess(res, username)),
+            catchError((err) => throwError(() => err))
+          );
+        })
+      );
   }
 
-  /** Faz logout e limpa estado e localStorage */
+  /** Processa login bem-sucedido (backend real ou mock) */
+  private handleLoginSuccess(
+    res: LoginResponseModel,
+    username: string
+  ): void {
+    const payload = decodeJwt(res.token);
+    const role: Role =
+      (payload?.["role"] as Role) ?? "PROFISSIONAL_SAUDE";
+
+    const user: Usuario = {
+      id: payload?.["sub"] ? parseInt(payload["sub"]) : 0,
+      username: payload?.["username"] ?? username,
+      role,
+    };
+
+    this.state.next({ user, token: res.token, isAuthenticated: true });
+    localStorage.setItem("clinica_token", res.token);
+    localStorage.setItem("clinica_user", JSON.stringify(user));
+  }
+
   logout(): void {
     this.state.next({ user: null, token: null, isAuthenticated: false });
+    this.data.logout();
+    localStorage.removeItem("clinica_token");
     localStorage.removeItem("clinica_user");
   }
 
-  /** Tenta restaurar sessão do localStorage (chamado ao inicializar app) */
+  /** Restaura sessão do localStorage ao inicializar o app */
   restoreSession(): void {
+    const token = localStorage.getItem("clinica_token");
     const stored = localStorage.getItem("clinica_user");
-    if (stored) {
-      const user: Usuario = JSON.parse(stored);
-      this.state.next({ user, token: "mock-jwt-token", isAuthenticated: true });
+    if (token && stored) {
+      try {
+        const user: Usuario = JSON.parse(stored);
+        this.state.next({ user, token, isAuthenticated: true });
+      } catch {
+        this.logout();
+      }
     }
   }
 }

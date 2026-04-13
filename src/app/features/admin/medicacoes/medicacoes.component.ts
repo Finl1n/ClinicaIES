@@ -37,7 +37,10 @@ export class MedicacoesComponent implements OnInit {
     this.form = this.fb.group({
       nome:      [item?.nome || '', Validators.required],
       descricao: [item?.descricao || '', Validators.required],
+      fornecedor:[item?.fornecedor || '', Validators.required],
+      armazenamento: [item?.armazenamento || 'TEMPERATURA_AMBIENTE', Validators.required],
       estoque:   [item?.estoque ?? 0, [Validators.required, Validators.min(0)]],
+      dataAquisicao: [item?.dataAquisicao || '', Validators.required],
       validade:  [item?.validade || '', Validators.required],
     });
   }

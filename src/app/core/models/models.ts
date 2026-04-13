@@ -1,5 +1,7 @@
-export type Status = 'ATIVO' | 'INATIVO';
-export type Role = 'ADMINISTRADOR' | 'PROFISSIONAL_SAUDE';
+export type Status = "ATIVO" | "INATIVO";
+export type Role = "ADMINISTRADOR" | "PROFISSIONAL_SAUDE";
+export type VinculoPaciente = "ESCOLA" | "UNIDADE" | "REITORIA";
+export type ArmazenamentoMedicacao = "REFRIGERACAO" | "TEMPERATURA_AMBIENTE";
 
 export interface Usuario {
   id: number;
@@ -24,19 +26,31 @@ export interface Unidade {
   status: Status;
 }
 
-export type CategoriasPaciente = 'ALUNO' | 'COLABORADOR_UNIDADE' | 'COLABORADOR_ESCOLA' | 'EXTERNO';
+export type CategoriasPaciente =
+  | "ALUNO"
+  | "COLABORADOR_UNIDADE"
+  | "COLABORADOR_ESCOLA"
+  | "EXTERNO";
 
 export interface Paciente {
   id: number;
   nome: string;
   categoria: CategoriasPaciente;
+  vinculoTipo: VinculoPaciente;
+  vinculoNome: string;
+  escolaId?: number;
+  unidadeId?: number;
   email: string;
   telefone: string;
   status: Status;
   prontuarioId?: number;
 }
 
-export type TipoAtendimento = 'URGENCIA' | 'EMERGENCIA' | 'CONSULTA' | 'REVISAO';
+export type TipoAtendimento =
+  | "URGENCIA"
+  | "EMERGENCIA"
+  | "CONSULTA"
+  | "REVISAO";
 
 export interface Atendimento {
   id: number;
@@ -70,26 +84,37 @@ export interface Prontuario {
 export interface ProfissionalSaude {
   id: number;
   nome: string;
+  username: string;
+  usuarioId?: number;
+  formacao: string;
   conselho: string;
   especialidade: string;
   numeroRegistro: string;
+  diasAtendimento: string;
+  turnosAtendimento: string;
+  dataCadastro: string;
   status: Status;
-  // Complemento (RF008)
-  formacao?: string;
-  disponibilidade?: string;
   cadastroCompleto: boolean;
+}
+
+export interface LoginResponse {
+  token: string;
+  usuario: Usuario;
 }
 
 export interface Medicacao {
   id: number;
   nome: string;
   descricao: string;
+  fornecedor: string;
+  armazenamento: ArmazenamentoMedicacao;
   estoque: number;
+  dataAquisicao: string;
   validade: string;
   status: Status;
 }
 
-export type TipoRequisicao = 'URGENTE' | 'CRITICO' | 'PREVENTIVO';
+export type TipoRequisicao = "URGENTE" | "CRITICO" | "PREVENTIVO";
 
 export interface RequisicaoMedicacao {
   id: number;

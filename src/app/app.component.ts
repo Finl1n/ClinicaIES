@@ -17,5 +17,11 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     this.auth.restoreSession();
+    this.applyStoredTheme();
+  }
+
+  private applyStoredTheme() {
+    const theme = localStorage.getItem("clinica_theme") || "dark";
+    document.body.setAttribute("data-theme", theme);
   }
 }
