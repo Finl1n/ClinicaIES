@@ -126,3 +126,13 @@ export interface RequisicaoMedicacao {
   data: string;
   observacao?: string;
 }
+export interface StatusDashboard {
+  totalPacientes: number;
+  totalAtendimentos: number;
+  totalProfissionais: number;
+  totalMedicacoes: number;
+  totalRequisicoes: number;
+}
+
+export type Medicamento = Medicacao;
+export type Requisicao = RequisicaoMedicacao;

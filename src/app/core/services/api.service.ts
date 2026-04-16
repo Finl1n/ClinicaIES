@@ -1,10 +1,18 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { Escola, Unidade, ProfissionalSaude } from '../models/models';
-
-// ── DTOs que espelham exatamente os records do backend ──────────────────────
+import { Injectable } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { Observable } from "rxjs";
+import { environment } from "../../../environments/environment";
+import {
+  Escola,
+  Unidade,
+  ProfissionalSaude,
+  Medicamento,
+  Atendimento,
+  Prontuario,
+  Requisicao,
+  StatusDashboard,
+  Paciente,
+} from "../models/models";
 
 export interface EscolaRequest {
   nome: string;
@@ -33,30 +41,37 @@ export interface ProfissionalComplementoRequest {
   turnosAtendimento?: string;
 }
 
+export interface MedicamentoRequest {
+  nome: string;
+  descricao?: string;
+  quantidade?: number;
+  unidadeMedida?: string;
+  ativo?: boolean;
+}
+
+export interface AtendimentoRequest {
+  pacienteId: number;
+  profissionalId?: number;
+  descricao?: string;
+  observacoes?: string;
+  dataAtendimento?: string;
+  status?: string;
+}
+
+export interface PacienteRequest {
+  nome: string;
+  cpf?: string;
+  dataNascimento?: string;
+  telefone?: string;
+  email?: string;
+  endereco?: string;
+  responsavel?: string;
+  ativo?: boolean;
+}
+
 // ── Serviço ─────────────────────────────────────────────────────────────────
 
-/**
- * Serviço HTTP centralizado — consome apenas os endpoints disponíveis no backend.
- *
- * Endpoints cobertos:
- *   POST   /escolas
- *   GET    /escolas
- *   GET    /escolas/:id
- *
- *   POST   /unidades
- *   GET    /unidades
- *   GET    /unidades/:id
- *   PUT    /unidades/:id
- *   PATCH  /unidades/:id/inativar
- *
- *   POST   /profissionais                        (ADMIN)
- *   GET    /profissionais                        (ADMIN)
- *   GET    /profissionais/:id                    (ADMIN)
- *   PATCH  /profissionais/:id/inativar           (ADMIN)
- *   GET    /profissionais/meu-perfil             (PROFISSIONAL)
- *   PATCH  /profissionais/meu-perfil/complemento (PROFISSIONAL)
- */
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class ApiService {
   private base = environment.apiUrl;
 
@@ -108,21 +123,110 @@ export class ApiService {
     return this.http.get<ProfissionalSaude>(`${this.base}/profissionais/${id}`);
   }
 
-  criarProfissional(data: ProfissionalCadastroRequest): Observable<ProfissionalSaude> {
-    return this.http.post<ProfissionalSaude>(`${this.base}/profissionais`, data);
+  criarProfissional(
+    data: ProfissionalCadastroRequest,
+  ): Observable<ProfissionalSaude> {
+    return this.http.post<ProfissionalSaude>(
+      `${this.base}/profissionais`,
+      data,
+    );
   }
 
   inativarProfissional(id: number): Observable<void> {
-    return this.http.patch<void>(`${this.base}/profissionais/${id}/inativar`, {});
+    return this.http.patch<void>(
+      `${this.base}/profissionais/${id}/inativar`,
+      {},
+    );
   }
 
   // ── PROFISSIONAIS (self — perfil próprio) ──────────────────────────────────
 
   getMeuPerfil(): Observable<ProfissionalSaude> {
-    return this.http.get<ProfissionalSaude>(`${this.base}/profissionais/meu-perfil`);
+    return this.http.get<ProfissionalSaude>(
+      `${this.base}/profissionais/meu-perfil`,
+    );
   }
 
-  completarCadastro(data: ProfissionalComplementoRequest): Observable<ProfissionalSaude> {
-    return this.http.patch<ProfissionalSaude>(`${this.base}/profissionais/meu-perfil/complemento`, data);
+  completarCadastro(
+    data: ProfissionalComplementoRequest,
+  ): Observable<ProfissionalSaude> {
+    return this.http.patch<ProfissionalSaude>(
+      `${this.base}/profissionais/meu-perfil/complemento`,
+      data,
+    );
+  }
+
+  // ── MEDICAMENTOS ───────────────────────────────────────────────────────────
+
+  getMedicamentos(): Observable<Medicamento[]> {
+    return this.http.get<Medicamento[]>(`${this.base}/medicamento`);
+  }
+
+  criarMedicamento(data: MedicamentoRequest): Observable<Medicamento> {
+    return this.http.post<Medicamento>(`${this.base}/medicamento`, data);
+  }
+
+  atualizarMedicamento(data: MedicamentoRequest): Observable<Medicamento> {
+    return this.http.put<Medicamento>(`${this.base}/medicamento`, data);
+  }
+
+  toggleMedicamento(id: number): Observable<void> {
+    return this.http.post<void>(`${this.base}/medicamento/inativar/${id}`, {});
+  }
+
+  // ── ATENDIMENTOS ───────────────────────────────────────────────────────────
+
+  getAtendimentos(): Observable<Atendimento[]> {
+    return this.http.get<Atendimento[]>(`${this.base}/atendimento`);
+  }
+
+  criarAtendimento(data: AtendimentoRequest): Observable<Atendimento> {
+    return this.http.post<Atendimento>(`${this.base}/atendimento`, data);
+  }
+
+  atualizarAtendimento(data: AtendimentoRequest): Observable<Atendimento> {
+    return this.http.put<Atendimento>(`${this.base}/atendimento`, data);
+  }
+
+  // ── PRONTUÁRIOS ────────────────────────────────────────────────────────────
+
+  getProntuarios(): Observable<Prontuario[]> {
+    return this.http.get<Prontuario[]>(`${this.base}/prontuario`);
+  }
+
+  getProntuarioById(id: number): Observable<Prontuario> {
+    return this.http.get<Prontuario>(`${this.base}/prontuario/${id}`);
+  }
+
+  getProntuarioByPacienteId(id: number): Observable<Prontuario[]> {
+    return this.http.get<Prontuario[]>(
+      `${this.base}/prontuario/paciente/${id}`,
+    );
+  }
+
+  // ── REQUISIÇÕES ────────────────────────────────────────────────────────────
+
+  getRequisicoes(): Observable<Requisicao[]> {
+    return this.http.get<Requisicao[]>(`${this.base}/requisicoes`);
+  }
+
+  // ── DASHBOARD / STATUS ─────────────────────────────────────────────────────
+
+  getStatus(): Observable<StatusDashboard> {
+    return this.http.get<StatusDashboard>(`${this.base}/status`);
+  }
+
+  // ── PACIENTES ──────────────────────────────────────────────────────────────
+
+  getPacientes(): Observable<Paciente[]> {
+    return this.http.get<Paciente[]>(`${this.base}/paciente`);
+  }
+
+  criarPaciente(data: PacienteRequest): Observable<Paciente> {
+    return this.http.post<Paciente>(`${this.base}/paciente`, data);
+  }
+
+  inativarPaciente(id: number): Observable<void> {
+    return this.http.put<void>(`${this.base}/paciente/inativar/${id}`, {});
   }
 }
